@@ -5,10 +5,11 @@ import Timer from '../components/Timer'
 
 
 export interface TenderListProps {
-    tenders: ITender[]; // 
+    tenders: ITender[];
+    autoCloseTender: (tenderId: string) => void;
 }
 
-const TenderList = ({ tenders }: TenderListProps) => {
+const TenderList = ({ tenders, autoCloseTender }: TenderListProps) => {
 
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -61,14 +62,19 @@ const TenderList = ({ tenders }: TenderListProps) => {
                                         </span>
                                         <div className="flex items-center gap-1.5 text-slate-400">
                                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 2m9-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            <Timer deadline={t.deadline} status={t.status} />
+                                            <Timer
+                                                deadline={t.deadline}
+                                                status={t.status}
+                                                tenderId={t._id}
+                                                onExpire={autoCloseTender} // Передай её из App.tsx через пропсы
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${t.status === 'active'
-                                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                        : 'bg-slate-100 text-slate-400 border border-slate-200'
+                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                    : 'bg-slate-100 text-slate-400 border border-slate-200'
                                     }`}>
                                     {t.status}
                                 </div>

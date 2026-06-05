@@ -158,6 +158,22 @@ function App() {
 
     }));
   }
+  const autoCloseTender = async (tenderId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5001/tenders/${tenderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'closed' })
+      });
+
+      if (response.ok) {
+
+        setTenders((prev: ITender[]) => prev.map(t => t._id === tenderId ? { ...t, status: 'closed' } : t));
+      }
+    } catch (err) {
+      console.error("Auto-close failed:", err);
+    }
+  };
   const deleteUser = async (id: string) => {
     try {
       const response = await fetch(`http://localhost:5001/users/${id}`, {
@@ -342,7 +358,7 @@ function App() {
       </nav>
 
       <Routes>
-        <Route path="/" element={<TenderList tenders={tenders} />} />
+        <Route path="/" element={<TenderList tenders={tenders} autoCloseTender={autoCloseTender} />} />
         <Route path="/registration" element={<Registration onReg={handleRegister} />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route path="/admin" element={

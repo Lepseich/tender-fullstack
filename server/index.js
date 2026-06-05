@@ -36,7 +36,8 @@ const tenderSchema = new mongoose.Schema({
     budget: Number,
     companyId: String,
     deadline: Date,
-    status: String
+    status: String,
+    fileUrl: String,
 });
 const userSchema = new mongoose.Schema({
     name: String,
@@ -59,6 +60,7 @@ const bidSchema = new mongoose.Schema({
     message: String,
     price: Number,
     status: String,
+    fileUrl: String,
 })
 const Bid = mongoose.model('Bid', bidSchema);
 const Tender = mongoose.model('Tender', tenderSchema);

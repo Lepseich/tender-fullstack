@@ -13,6 +13,7 @@ export interface ITender {
     deadline: string,
     companyId: string,
     status: 'active' | 'closed' | 'pending',
+    fileUrl?: string,
 }
 export interface IBid {
     _id?: string,
@@ -22,4 +23,5 @@ export interface IBid {
     message: string,
     price: number,
     status: 'pending' | 'accepted' | 'rejected', 
+    fileUrl?: string,
 }

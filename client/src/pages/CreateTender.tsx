@@ -10,6 +10,7 @@ const tenderSchema = z.object({
     budget: z.number({ message: "Введіть число" }).positive({ message: "Ціна має бути більше 0" }),
     description: z.string().min(10, { message: 'Опис тендера повинен мати більше 10-ти символів' }),
     deadline: z.string(),
+    fileUrl: z.string().url({ message: "Це має бути правильне посилання" }).optional().or(z.literal('')),
 })
 
 type TenderFields = z.infer<typeof tenderSchema>;
@@ -35,6 +36,7 @@ const CreateTender = ({ onAddTender, currentUserId }: TenderProps) => {
             description: data.description,
             budget: data.budget,
             deadline: data.deadline,
+            fileUrl: data.fileUrl,
             companyId: currentUserId,
             status: 'active',
         };
@@ -99,7 +101,15 @@ const CreateTender = ({ onAddTender, currentUserId }: TenderProps) => {
                             />
                         </div>
                     </div>
-
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-5">Посилання на документацію (ТЗ)</label>
+                        <input
+                            type="url"
+                            placeholder="https://drive.google.com/..."
+                            {...register('fileUrl')}
+                            className="px-6 py-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 focus:bg-white transition-all"
+                        />
+                    </div>
                     {/* Блок: Опис */}
                     <div className="flex flex-col gap-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-4">Детальний опис проекту</label>
