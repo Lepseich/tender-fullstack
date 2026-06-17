@@ -14,11 +14,12 @@ export interface TenderDetailProps {
     onChangeBidStatus: (bidId: string, newStatus: 'accepted' | 'rejected') => void;
     handleAcceptBid: (bidId: string, tenderId: string) => void;
     onRejectBid: (bidId: string) => void;
+    onUpdateTender: (id: string, data: Partial<ITender>) => Promise<boolean>;
 }
 
 
 
-const TenderDetail = ({ tenders, currentUser, onAddBid, allBids, onChangeBidStatus, handleAcceptBid, onRejectBid }: TenderDetailProps) => {
+const TenderDetail = ({ tenders, currentUser, onAddBid, allBids, onChangeBidStatus, handleAcceptBid, onRejectBid, onUpdateTender }: TenderDetailProps) => {
 
     const [bidPrice, setBidPrice] = useState<number>(0);
     const [bidMessage, setBidMessage] = useState('');
@@ -90,7 +91,24 @@ const TenderDetail = ({ tenders, currentUser, onAddBid, allBids, onChangeBidStat
                             </div>
 
                             <h1 className="text-3xl font-black text-slate-900 mb-4 leading-tight">{tender.title}</h1>
-
+                            {isOwner && tender.status === 'active' && (
+                                <button
+                                    onClick={async () => {
+                                        const newTitle = prompt("Нова назва тендеру:", tender.title);
+                                        const newBudget = prompt("Новий бюджет:", tender.budget.toString());
+                                        if (newTitle && newBudget) {
+                                            // Вызываем функцию из пропсов!
+                                            await onUpdateTender(tender._id!, {
+                                                title: newTitle,
+                                                budget: Number(newBudget)
+                                            });
+                                        }
+                                    }}
+                                    className="text-xs text-indigo-500 underline"
+                                >
+                                    Редагувати умови
+                                </button>
+                            )}
 
                             <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
                                 <div className="bg-slate-50 p-4 rounded-2xl">

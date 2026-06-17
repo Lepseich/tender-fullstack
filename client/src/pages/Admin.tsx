@@ -8,10 +8,11 @@ interface AdminProps {
     onDeleteUser: (id: string) => void;
     onDeleteTender: (id: string) => void;
     currentUser: IUser;
+    onUpdateUser: (id: string, name: string) => void;
 }
 
 
-const Admin = ({ tenders, users, onDeleteTender, onDeleteUser, currentUser }: AdminProps) => {
+const Admin = ({ tenders, users, onDeleteTender, onDeleteUser, currentUser, onUpdateUser }: AdminProps) => {
 
 
 
@@ -52,22 +53,35 @@ const Admin = ({ tenders, users, onDeleteTender, onDeleteUser, currentUser }: Ad
                                 <div className="flex items-center gap-4">
                                     {/* Цветные бейджи ролей */}
                                     <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${u.role === 'admin' ? 'bg-rose-100 text-rose-600' :
-                                            u.role === 'company' ? 'bg-blue-100 text-blue-600' :
-                                                'bg-emerald-100 text-emerald-600'
+                                        u.role === 'company' ? 'bg-blue-100 text-blue-600' :
+                                            'bg-emerald-100 text-emerald-600'
                                         }`}>
                                         {u.role}
                                     </span>
 
                                     {u._id !== currentUser._id ? (
-                                        <button
-                                            onClick={() => onDeleteUser(u._id)}
-                                            className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                                            title="Видалити користувача"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                        </button>
+                                        <div>
+                                            <button
+                                                onClick={() => {
+                                                    const name = prompt("Введіть нове ім'я користувача:", u.name);
+                                                    if (name && name.trim()) {
+                                                        onUpdateUser(u._id, name);
+                                                    }
+                                                }}
+                                                className="mr-3 text-indigo-500 hover:text-indigo-700 font-bold text-xs uppercase"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => onDeleteUser(u._id)}
+                                                className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                                                title="Видалити користувача"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        </div>
                                     ) : (
-                                        <div className="w-8"></div> /* Пустое место для самого себя */
+                                        <div className="w-8"></div>
                                     )}
                                 </div>
                             </div>

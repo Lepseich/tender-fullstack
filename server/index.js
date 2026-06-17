@@ -193,12 +193,53 @@ app.patch('/bids/:id', async (req, res) => {
         res.status(400).json({ message: "Ошибка обновления" });
     }
 });
-app.patch('/tenders/:id', async (req, res) => {
+app.patch('/tenders/:id', verifyToken, async (req, res) => {
     try {
-        const updatedTender = await Tender.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedTender = await Tender.findByIdAndUpdate(
+            req.params.id, 
+            req.body, 
+            { new: true }
+        );
         res.json(updatedTender);
     } catch (err) {
-        res.status(400).json({ message: "Ошибка обновления" });
+        res.status(400).json({ message: "Помилка оновлення тендеру" });
+    }
+});
+app.patch('/users/:id', verifyToken, async (req, res) => {
+    try {
+        const { name } = req.body;
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id, 
+            { name }, 
+            { new: true } 
+        );
+        res.json(updatedUser);
+    } catch (err) {
+        res.status(400).json({ message: "Не вдалося оновити ім'я" });
+    }
+});
+app.patch('/users/:id/password', verifyToken, async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        
+
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: "Користувача не знайдено" });
+
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Старий пароль невірний" });
+        }
+
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        await user.save();
+        
+        res.json({ message: "Пароль успішно оновлено" });
+    } catch (err) {
+        res.status(500).json({ message: "Помилка сервера" });
     }
 });
 app.listen(PORT, () => {

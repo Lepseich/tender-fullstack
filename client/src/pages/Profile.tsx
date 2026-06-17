@@ -1,19 +1,24 @@
 import type { ITender, IUser, IBid } from '../types';
+import { useState } from 'react';
 
 export interface ProfileProps {
     currentUser: IUser;
     tenders: ITender[];
     allBids: IBid[];
+    onUpdateUser: (id: string, name: string) => Promise<boolean>;
+    onChangePassword: (id: string, oldPass: string, newPass: string) => Promise<boolean>;
 }
 
 
 
-const Profile = ({ currentUser, tenders, allBids }: ProfileProps) => {
+const Profile = ({ currentUser, tenders, allBids, onUpdateUser, onChangePassword }: ProfileProps) => {
     const userTenders = tenders.filter(t => t.companyId === currentUser._id);
     const userBids = allBids.filter(b => b.userId === currentUser._id);
-
-
-
+    const [isEditing, setIsEditing] = useState(false);
+    const [tempName, setNewName] = useState(currentUser.name);
+    const [isChangingPass, setIsChangingPass] = useState(false);
+    const [oldPass, setOldPass] = useState('');
+    const [newPass, setNewPass] = useState('');
     const closedTendersCount = userTenders.filter(t => t.status === 'closed').length;
     const companyRating = userTenders.length > 0 ? Math.round((closedTendersCount / userTenders.length) * 100) : 0;
     const myWins = allBids.filter(b => b.userId === currentUser._id && b.status === 'accepted');
@@ -21,18 +26,36 @@ const Profile = ({ currentUser, tenders, allBids }: ProfileProps) => {
     const myTenderIds = tenders.filter(t => t.companyId === currentUser?._id).map(t => t._id);
     const newBidsNotifications = allBids.filter(b => myTenderIds.includes(b.tenderId) && b.status === 'pending');
 
-    // 1. Статистика для Компанії (Замовника)
+
+    const handlePassSubmit = async () => {
+        if (newPass.length < 6) {
+            alert("Новий пароль має бути не менше 6 символів");
+            return;
+        }
+        const success = await onChangePassword(currentUser._id, oldPass, newPass);
+        if (success) {
+            alert("Пароль успішно змінено! ✨");
+            setIsChangingPass(false);
+            setOldPass('');
+            setNewPass('');
+        }
+    };
+    const saveName = async () => {
+        const success = await onUpdateUser(currentUser._id, tempName);
+        if (success) setIsEditing(false);
+    };
+
     const totalCreated = userTenders.length;
     const totalClosed = userTenders.filter(t => t.status === 'closed').length;
-    // Формула: (Завершені / Всього) * 100
+
     const companyEfficiency = totalCreated > 0
         ? Math.round((totalClosed / totalCreated) * 100)
         : 0;
 
-    // 2. Статистика для Юзера (Виконавця)
+
     const totalApplied = userBids.length;
     const totalWon = userBids.filter(b => b.status === 'accepted').length;
-    // Формула: (Перемоги / Всього заявок) * 100
+
     const userSuccessRate = totalApplied > 0
         ? Math.round((totalWon / totalApplied) * 100)
         : 0;
@@ -43,22 +66,38 @@ const Profile = ({ currentUser, tenders, allBids }: ProfileProps) => {
         <div className="min-h-screen bg-slate-50 py-12 px-4">
             <div className="max-w-2xl mx-auto">
 
-                {/* 1. ВЕРХНЯЯ ЧАСТЬ - АВАТАР И ИМЯ */}
+
                 <div className="flex flex-col items-center mb-10">
                     <div className="w-28 h-24 bg-indigo-600 rounded-full flex items-center justify-center shadow-xl shadow-indigo-200 mb-4 border-4 border-white">
                         <span className="text-4xl font-black text-white uppercase">
                             {currentUser.name[0]}
                         </span>
                     </div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">{currentUser.name}</h1>
+                    <div className="flex items-center gap-4">
+                        {isEditing ? (
+                            <div className="flex gap-2">
+                                <input
+                                    value={tempName}
+                                    onChange={e => setNewName(e.target.value)}
+                                    className="px-4 py-2 bg-slate-50 rounded-xl border border-indigo-200 outline-none text-slate-800 font-bold"
+                                />
+                                <button onClick={saveName} className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold">OK</button>
+                                <button onClick={() => setIsEditing(false)} className="text-slate-400 text-xs">Скасувати</button>
+                            </div>
+                        ) : (
+                            <>
+                                <h1 className="text-3xl font-black text-slate-900 tracking-tight">{currentUser.name}</h1>
+                                <button onClick={() => setIsEditing(true)} className="text-[10px] font-black uppercase text-indigo-500 hover:text-indigo-700 transition-colors">Редагувати</button>
+                            </>
+                        )}
+                    </div>
                     <p className="text-slate-500 font-medium">{currentUser.email}</p>
                 </div>
 
-                {/* 2. ОСНОВНАЯ КАРТОЧКА ИНФОРМАЦИИ */}
+
                 <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
                     <div className="p-8 space-y-8">
 
-                        {/* Строка: Роль */}
                         <div className="flex justify-between items-center pb-4 border-b border-slate-50">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Тип аккаунта</span>
                             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${currentUser.role === 'admin' ? 'bg-rose-100 text-rose-600' :
@@ -68,7 +107,6 @@ const Profile = ({ currentUser, tenders, allBids }: ProfileProps) => {
                                 {currentUser.role}
                             </span>
                         </div>
-
                         {/* 3. СЕКЦИЯ СТАТИСТИКИ - ПЛИТКИ */}
                         <div className="pt-2">
                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Ваша активність</h3>
@@ -116,14 +154,61 @@ const Profile = ({ currentUser, tenders, allBids }: ProfileProps) => {
 
                     </div>
                 </div>
-
+                {/* СЕКЦІЯ БЕЗПЕКИ */}
+                <div className="mt-12 bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="p-6">
+                        {isChangingPass ? (
+                            <div className="flex flex-col gap-4 animate-in fade-in duration-300">
+                                <h3 className="text-sm font-bold text-slate-900 mb-2 px-2">Зміна пароля</h3>
+                                <input
+                                    type="password"
+                                    placeholder="Поточний пароль"
+                                    value={oldPass}
+                                    onChange={e => setOldPass(e.target.value)}
+                                    className="px-5 py-3 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
+                                />
+                                <input
+                                    type="password"
+                                    placeholder="Новий пароль"
+                                    value={newPass}
+                                    onChange={e => setNewPass(e.target.value)}
+                                    className="px-5 py-3 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
+                                />
+                                <div className="flex gap-2 mt-2">
+                                    <button onClick={handlePassSubmit} className="flex-1 bg-indigo-600 text-white py-3 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 active:scale-95 transition-all">
+                                        Оновити доступ
+                                    </button>
+                                    <button onClick={() => setIsChangingPass(false)} className="px-6 py-3 text-slate-400 text-xs font-bold uppercase">
+                                        Скасувати
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500 text-lg">🛡️</div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-800">Безпека акаунта</p>
+                                        <p className="text-[10px] text-slate-400 uppercase font-medium">Остання зміна: сьогодні</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsChangingPass(true)}
+                                    className="px-5 py-2.5 bg-slate-50 text-slate-900 rounded-xl text-xs font-bold border border-slate-100 hover:bg-slate-100 transition-all active:scale-95"
+                                >
+                                    Змінити пароль
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
                 <div className="mb-10">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-6">Сповіщення</h3>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Сповіщення</h3>
 
                     <div className="space-y-3">
-                        {/* Уведомления для юзера о победе */}
+
                         {currentUser?.role === 'user' && winNotifications.map(note => {
-                            // Ищем тендер, к которому относится эта победная заявка
+
                             const targetTender = tenders.find(t => t._id === note.tenderId);
 
                             return (

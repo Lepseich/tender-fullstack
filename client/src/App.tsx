@@ -78,16 +78,24 @@ function App() {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
-      })
+      });
+
       if (response.ok) {
-        const data = await response.json()
+        const data = await response.json();
         setCurrentUser(data.user);
         localStorage.setItem('tender-token', data.token);
+        return true; 
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Помилка входу"); 
+        return false;   
       }
     } catch (err) {
-      console.error('Неверный логин или пароль')
+      console.error('Ошибка сети:', err);
+      alert("Сервер не відповідає");
+      return false;
     }
-  }
+  };
   const handleAcceptBid = async (bidId: string, tenderId: string) => {
     try {
       const acceptBidFetch = await fetch(`http://localhost:5001/bids/${bidId}`, {
@@ -200,7 +208,77 @@ function App() {
       console.log("Error with Users");
     }
   }
+  const handleUpdateUser = async (userId: string, newName: string) => {
+    try {
+      const response = await fetch(`http://localhost:5001/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('tender-token')}`
+        },
+        body: JSON.stringify({ name: newName })
+      });
 
+      if (response.ok) {
+        const updatedUser = await response.json();
+
+
+        setUsers(prev => prev.map(u => u._id === userId ? updatedUser : u));
+
+        if (currentUser?._id === userId) {
+          setCurrentUser(updatedUser);
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Помилка при оновленні імені:", error);
+      return false;
+    }
+  };
+  const handleUpdateTender = async (tenderId: string, updatedData: Partial<ITender>) => {
+    try {
+      const response = await fetch(`http://localhost:5001/tenders/${tenderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('tender-token')}`
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (response.ok) {
+        const saved = await response.json();
+        setTenders((prev: ITender[]) => prev.map(t => t._id === tenderId ? saved : t));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+  const handleChangePassword = async (userId: string, oldPass: string, newPass: string) => {
+    try {
+      const response = await fetch(`http://localhost:5001/users/${userId}/password`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('tender-token')}`
+        },
+        body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
   useEffect(() => {
     localStorage.setItem('tender-users', JSON.stringify(users))
   }, [users]);
@@ -229,7 +307,7 @@ function App() {
 
         setBids(data);
       } catch (error) {
-        console.error("Сервер не отвечает, использую локальные данные", error);
+        console.error("Сервер не відповідае, використовую локальні данні", error);
       }
     };
     fetchBids();
@@ -242,7 +320,7 @@ function App() {
 
         setTenders(data);
       } catch (error) {
-        console.error("Сервер не отвечает, использую локальные данные", error);
+        console.error("Сервер не відповідае, використовую локальні данні", error);
       }
     };
 
@@ -254,7 +332,7 @@ function App() {
       <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
-          {/* 1. ЛОГОТИП (Слева) */}
+
           <NavLink to="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center transition-transform group-hover:rotate-12">
               <span className="text-white font-black text-xs">T</span>
@@ -264,7 +342,7 @@ function App() {
             </span>
           </NavLink>
 
-          {/* 2. МЕНЮ (Центр) */}
+
           <div className="hidden md:flex items-center gap-1">
             <NavLink
               to="/"
@@ -363,7 +441,7 @@ function App() {
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route path="/admin" element={
           <ProtectedRoute user={currentUser} requiredRole="admin">
-            <Admin currentUser={currentUser!} tenders={tenders} users={users} onDeleteUser={deleteUser} onDeleteTender={deleteTender} />
+            <Admin currentUser={currentUser!} tenders={tenders} users={users} onDeleteUser={deleteUser} onDeleteTender={deleteTender} onUpdateUser={handleUpdateUser} />
           </ProtectedRoute>
         } />
 
@@ -379,7 +457,7 @@ function App() {
         } />
         <Route path='/tender/:tenderId' element={
           <ProtectedRoute user={currentUser}>
-            <TenderDetail handleAcceptBid={handleAcceptBid} onAddBid={handleAddBid} tenders={tenders} currentUser={currentUser} allBids={bids} onChangeBidStatus={changeBidStatus} onRejectBid={handleRejectBid}></TenderDetail>
+            <TenderDetail handleAcceptBid={handleAcceptBid} onAddBid={handleAddBid} tenders={tenders} currentUser={currentUser} allBids={bids} onChangeBidStatus={changeBidStatus} onRejectBid={handleRejectBid} onUpdateTender={handleUpdateTender}></TenderDetail>
           </ProtectedRoute>
         } />
         <Route path='/my-tenders' element={
@@ -389,7 +467,7 @@ function App() {
         } />
         <Route path='/prof' element={
           <ProtectedRoute user={currentUser}>
-            <Profile currentUser={currentUser!} tenders={tenders} allBids={bids}></Profile>
+            <Profile currentUser={currentUser!} tenders={tenders} allBids={bids} onUpdateUser={handleUpdateUser} onChangePassword={handleChangePassword}></Profile>
           </ProtectedRoute>
         } />
 

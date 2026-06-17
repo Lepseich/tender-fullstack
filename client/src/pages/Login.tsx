@@ -14,7 +14,7 @@ const loginSchema = z.object({
 type LoginFields = z.infer<typeof loginSchema>;
 
 interface LoginProps {
-    onLogin: (email: string, pass: string) => void;
+    onLogin: (email: string, pass: string) => Promise<boolean>;
 }
 
 const Login = ({ onLogin }: LoginProps) => {
@@ -22,10 +22,16 @@ const Login = ({ onLogin }: LoginProps) => {
         resolver: zodResolver(loginSchema)
     });
     const navigate = useNavigate();
-    const onSubmit = (data: LoginFields) => {
-        onLogin(data.email, data.password);
-        navigate('/');
-    }
+    const onSubmit = async (data: LoginFields) => {
+
+        const success = await onLogin(data.email, data.password);
+
+
+        if (success) {
+            navigate('/');
+        }
+
+    };
     return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
