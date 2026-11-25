@@ -6,9 +6,14 @@ app.use(express.json());
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const dbUrl = 'mongodb+srv://admin:apple123@cluster0.rksoczu.mongodb.net/?appName=Cluster0';
+require('dotenv').config();
+const dbUrl = process.env.MONGODB_URI;
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'kpi_tender_secret_key_2026';
+const SECRET_KEY = process.env.JWT_SECRET;
+if (!dbUrl || !SECRET_KEY) {
+  console.error('MONGODB_URI and JWT_SECRET must be set in .env');
+  process.exit(1);
+}
 mongoose.connect(dbUrl)
     .then(() => {
         console.log('=========================================');
@@ -18,7 +23,7 @@ mongoose.connect(dbUrl)
     .catch((err) => {
         console.log('ОШИБКА ПОДКЛЮЧЕНИЯ К БАЗЕ:', err);
     });
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
